@@ -14,10 +14,13 @@ Concept / Game Loop
 
 Run Locally
 ```bash
-git clone <your-fork-url> eel-hooks
-cd eel-hooks
+git clone <your-fork-url> ItsElectric
+cd ItsElectric
 npm install            # installs Phaser & Vite
 npm run dev            # Vite dev‑server  →  open http://localhost:5173
 ```
 Bugs
 * very rarely eel will vibrate
+
+Didn't Get To
+* electric pellets that allow eel to slice fishing lines
