@@ -1,19 +1,36 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Eel Snake – Art Check</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Eel & Hooks</title>
+
   <style>
-    /* Remove default margins so canvas touches edges */
-    html, body { margin: 0; background: #000; }
-    #game { width: 100%; height: 100%; }
+    /* ---- reset ---- */
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{width:100%;height:100%}
+
+    /* ---- center the game ---- */
+    body{
+      display:flex;                /* flexbox layout */
+      justify-content:center;      /* horizontal center */
+      align-items:center;          /* vertical   center */
+      background:#000;             /* same as COLOR.BACK */
+      overflow:hidden;             /* no scrollbars on mobile */
+    }
+
+    /* ---- the div that Phaser attaches to ---- */
+    #game{
+      width:100%;                  /* shrink to fit small screens */
+      max-width:320px;             /* CANVAS_WIDTH  */
+      aspect-ratio:320/512;        /* keep height ratio */
+    }
   </style>
 </head>
+
 <body>
   <div id="game"></div>
-
-  <!-- Main JS entry (ES-module) -->
-  <script type="module" src="/src/main.js"></script>
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>

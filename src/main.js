@@ -45,13 +45,26 @@ class PlayScene extends Phaser.Scene {
     // state flags
     this.state = 'alive';                 // 'alive' | 'retracting' | 'dead'
 
+    /* scores ------------------------------------------------------- */
+    this.score      = 0;                                        // current run
+    this.best       = Number(localStorage.getItem('eelBest')) || 0; // high score
+
+  this.scoreTxt = this.add
+    .text(6, 6, '0', { color:'#fff', fontSize:14 })
+    .setDepth(10);                   
+
+  this.bestTxt  = this.add
+    .text(CANVAS_WIDTH - 6, 6, `BEST ${this.best}`, { color:'#fff', fontSize:14 })
+    .setOrigin(1, 0)
+    .setDepth(10);                     
+    
     // eel data + first drift target
     this.eel        = makeEel();
     this.target     = { x: this.eel.head.x, y: this.eel.head.y + 200 };
     this.nextTarget = null;
 
     // graphics layers
-    this.waveGfx   = this.add.graphics();
+    this.waveGfx   = this.add.graphics().setDepth(0);
     this.borderGfx = this.add.graphics().lineStyle(2, 0xffffff)
                         .strokeRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -227,6 +240,8 @@ class PlayScene extends Phaser.Scene {
       this.preyGroup.getChildren().forEach(p => {
         if (withinRadius(this.eel.head.x, this.eel.head.y, p.x, p.y, 16)) {
           this.eel.grow += p.kind === 'fish' ? 1 : 3;
+          this.score  += 1;
+          this.scoreTxt.setText(this.score);
           p.destroy();
         }
       });
@@ -326,12 +341,16 @@ class PlayScene extends Phaser.Scene {
   }
 }
 
-// boot Phaser
+/* boot Phaser */
 new Phaser.Game({
-  type: Phaser.AUTO,
-  parent: 'game',
-  width: CANVAS_WIDTH,
-  height: CANVAS_HEIGHT,
-  backgroundColor: COLOR.BACK,
-  scene: PlayScene
+  type   : Phaser.AUTO,
+  parent : 'game',
+  backgroundColor : COLOR.BACK,
+  width  : CANVAS_WIDTH,
+  height : CANVAS_HEIGHT,
+  scale  : {
+    mode       : Phaser.Scale.FIT,        // shrink to fit
+    autoCenter : Phaser.Scale.CENTER_BOTH // keep centred
+  },
+  scene  : PlayScene
 });

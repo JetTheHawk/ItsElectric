@@ -15,7 +15,7 @@ export const TURN_ARC = 60;
 export const COLOR = {
   BACK     : 0x000000,  // full-screen clear colour
   SKY      : 0x041830,  // top band (atmosphere / sky)
-  WATER    : 0x3b6d8e,  // water waves under sky
+  WATER    : 0x244060,  // water waves under sky
   HEAD     : 0x7bbf8c,  // eel head
   BODY     : 0x7bbf8c,  // eel body (same hue; change if desired)
   FISH     : 0xffa238,  // fish pellet
