@@ -18,3 +18,6 @@ git clone <your-fork-url> eel-hooks
 cd eel-hooks
 npm install            # installs Phaser & Vite
 npm run dev            # Vite dev‑server  →  open http://localhost:5173
+```
+Bugs
+* very rarely eel will vibrate
