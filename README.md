@@ -1,6 +1,6 @@
 # ItsElectric ─ a tiny mobile‑friendly Snake remix
 
-# Concept / Game Loop
+Concept / Game Loop
 * **Premise** You are an adventurous eel cruising the shallows.  
   *Eat* orange fish and crabs to grow your tail.  
   *Avoid* fishing hooks:  
@@ -12,7 +12,7 @@
 * Wall‑hits (“Bonked wall!”) and self–tangles (“Tangled!”) also end the run.  
 * A persistent **high‑score** is stored in `localStorage`.
 
-# Run Locally
+Run Locally
 ```bash
 git clone <your-fork-url> eel-hooks
 cd eel-hooks
