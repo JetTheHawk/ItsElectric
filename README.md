@@ -24,3 +24,8 @@ Bugs
 
 Didn't Get To
 * electric pellets that allow eel to slice fishing lines
+
+AI use
+* Used AI for generating art
+* commenting code
+* helping with proper phaser + JS syntax (still new to me)
