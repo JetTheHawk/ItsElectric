@@ -15,11 +15,11 @@ export const TURN_ARC = 60;
 export const COLOR = {
   BACK     : 0x000000,  // full-screen clear colour
   SKY      : 0x041830,  // top band (atmosphere / sky)
-  WATER    : 0x244b66,  // water waves under sky
-  HEAD     : 0xf4d35e,  // eel head
-  BODY     : 0xf4d35e,  // eel body (same hue; change if desired)
-  FISH     : 0x46c0f0,  // fish pellet
-  CRAB     : 0x0084ff,  // crab pellet
+  WATER    : 0x3b6d8e,  // water waves under sky
+  HEAD     : 0x7bbf8c,  // eel head
+  BODY     : 0x7bbf8c,  // eel body (same hue; change if desired)
+  FISH     : 0xffa238,  // fish pellet
+  CRAB     : 0xff7a1b,  // crab pellet
   HOOKLINE : 0xffffff,   // hooks & ropes
-  ELECTRIC : 0xffee00    // ← NEW: electric pellet
+  ELECTRIC : 0xffee00    // electric pellet
 };
