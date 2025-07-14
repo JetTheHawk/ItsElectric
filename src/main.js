@@ -1,4 +1,4 @@
-// main.js  – scene that shows one free-moving eel with assisted 180° turns
+// main.js — free-roaming eel with prey, self-collision game-over / restart
 import Phaser from 'phaser';
 import {
   CANVAS_WIDTH,
@@ -11,75 +11,93 @@ import {
 import {
   cacheFish,
   cacheCrab,
-  cacheHookHead,
   cacheEelHead,
-  cacheEelBlock,
-  cacheElectricPellet
+  cacheEelBlock
 } from './shapes.js';
 
-import { moveHead, followSegments } from './motion.js';
-import { dist, dot, crossSign, lenSq } from './math.js';
+import { moveHead, followSegments }          from './motion.js';
+import { dist, dot, crossSign, lenSq }       from './math.js';
+import { randCanvasPoint, withinRadius }     from './helpers.js';
 
-// build starter eel (head in lower third, body stacked above, heading down)
+// ---------------------------------------------------------------------------
+// build starter eel (head one-third down, tail above, heading down)
+// ---------------------------------------------------------------------------
 function makeEel() {
-  const headY = CANVAS_HEIGHT / 3;
-  const head  = { x: CANVAS_WIDTH / 2, y: headY };
-  const eel   = { head, vel: { x: 0, y: 1 }, body: [], grow: 0 };
-
+  const head = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 3 };
+  const eel  = { head, vel: { x: 0, y: 1 }, body: [], grow: 0 };
   for (let i = 1; i <= 3; i++) {
     eel.body.push({ x: head.x, y: head.y - i * BODY_SEGMENT_SPACING });
   }
   return eel;
 }
 
+// ---------------------------------------------------------------------------
+// Scene
+// ---------------------------------------------------------------------------
 class PlayScene extends Phaser.Scene {
   preload() {
     cacheFish(this);
     cacheCrab(this);
-    cacheHookHead(this);
     cacheEelHead(this);
     cacheEelBlock(this);
-    cacheElectricPellet(this);
   }
 
   create() {
-    // eel data and first drift target (200 px below head)
+    // state flag
+    this.alive = true;
+
+    // eel data
     this.eel        = makeEel();
     this.target     = { x: this.eel.head.x, y: this.eel.head.y + 200 };
     this.nextTarget = null;
 
-    // sprites for head & body
+    // sprites
     this.headSprite  = this.add.image(this.eel.head.x, this.eel.head.y, 'eelHead');
-    this.bodySprites = this.eel.body.map(seg => this.add.image(seg.x, seg.y, 'eelBlock'));
+    this.bodySprites = this.eel.body.map(seg =>
+      this.add.image(seg.x, seg.y, 'eelBlock')
+    );
 
-    // steering tap handler
-    this.input.on('pointerdown', p => this.handleTap(p));
+    // prey
+    this.preyGroup = this.add.group();
+    this.time.addEvent({ delay: 1800, loop: true, callback: () => this.spawnPrey() });
 
-    // simple reference art
-    this.add.image(32, 32, 'fish');
-    this.add.image(CANVAS_WIDTH / 3, 32, 'electric');
-    this.add.image(CANVAS_WIDTH - 32, 32, 'crab');
-    const hook = this.add.image(CANVAS_WIDTH / 4, CANVAS_HEIGHT - 40, 'hookHead');
-    this.add.graphics().lineStyle(2, COLOR.HOOKLINE).lineBetween(hook.x, 0, hook.x, hook.y + 2);
+    // steering
+    this.input.on('pointerdown', p => {
+      if (!this.alive) return this.scene.restart();
+      this.handleTap(p);
+    });
   }
 
-  // handle player tap ─ sets target, maybe inserts a tight side-arc
+  // -------------------------------------------------------------------------
+  // spawn fish (1 point) or crab (3 points), remove after 10 s
+  // -------------------------------------------------------------------------
+  spawnPrey() {
+    if (!this.alive) return;
+    const key     = Math.random() < 0.7 ? 'fish' : 'crab';
+    const { x, y } = randCanvasPoint();
+    const sprite  = this.add.image(x, y, key);
+    sprite.kind   = key;
+    this.preyGroup.add(sprite);
+    this.time.delayedCall(10000, () => sprite.destroy());
+  }
+
+  // -------------------------------------------------------------------------
+  // steering tap with assisted 180° arc
+  // -------------------------------------------------------------------------
   handleTap(pointer) {
     const head = this.eel.head;
-    const d = dist(head.x, head.y, pointer.x, pointer.y);
-    if (d < 24) return;                   // ignore taps too close
+    const d    = dist(head.x, head.y, pointer.x, pointer.y);
+    if (d < 24) return;
 
     const desiredX = (pointer.x - head.x) / d;
     const desiredY = (pointer.y - head.y) / d;
     const curX     = this.eel.vel.x;
     const curY     = this.eel.vel.y;
-    const facingDot = dot(desiredX, desiredY, curX, curY); // >100° behind → < -0.15
 
-    if (facingDot < -0.15) {
-      const side = crossSign(curX, curY, desiredX, desiredY) || 1; // +1 left, -1 right
+    if (dot(desiredX, desiredY, curX, curY) < -0.15) {
+      const side  = crossSign(curX, curY, desiredX, desiredY) || 1;
       const perpX = -curY * side;
       const perpY =  curX * side;
-
       this.target.x = head.x + perpX * TURN_ARC;
       this.target.y = head.y + perpY * TURN_ARC;
       this.nextTarget = { x: pointer.x, y: pointer.y };
@@ -90,49 +108,74 @@ class PlayScene extends Phaser.Scene {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // update loop
+  // -------------------------------------------------------------------------
   update(_, dtMS) {
+    if (!this.alive) return;
     const dt = dtMS / 1000;
 
-    // calc distance to current target
-    let gap = dist(this.eel.head.x, this.eel.head.y, this.target.x, this.target.y);
-
-    // if close, decide new target before moving
-    if (gap < 2) {
+    // choose new target if close
+    if (dist(this.eel.head.x, this.eel.head.y, this.target.x, this.target.y) < 2) {
       if (this.nextTarget) {
-        // step 2 of assisted arc
         this.target = { ...this.nextTarget };
         this.nextTarget = null;
       } else {
-        // extend target far ahead in current heading
-        if (lenSq(this.eel.vel.x, this.eel.vel.y) < 0.0001) {
-          this.eel.vel = { x: 0, y: -1 };           // safe fallback up
-        }
+        if (lenSq(this.eel.vel.x, this.eel.vel.y) < 0.0001) this.eel.vel = { x: 0, y: -1 };
         this.target.x += this.eel.vel.x * 1000;
         this.target.y += this.eel.vel.y * 1000;
       }
     }
 
-    // move eel data & tail
+    // move eel data + segments
     moveHead(this.eel, this.target.x, this.target.y, dt);
     followSegments(this.eel);
 
-    // sync head sprite
-    this.headSprite.setPosition(this.eel.head.x, this.eel.head.y);
+    // prey collisions
+    this.preyGroup.getChildren().forEach(p => {
+      if (withinRadius(this.eel.head.x, this.eel.head.y, p.x, p.y, 16)) {
+        this.eel.grow += p.kind === 'fish' ? 1 : 3;
+        p.destroy();
+      }
+    });
 
-    // grow tail sprites if needed
+    // self-collision: ignore first two body blocks
+    for (let i = 2; i < this.eel.body.length; i++) {
+      const seg = this.eel.body[i];
+      if (withinRadius(this.eel.head.x, this.eel.head.y, seg.x, seg.y, 18)) {
+        this.gameOver('Tangled!');
+        break;
+      }
+    }
+
+    // sync sprites
+    this.headSprite.setPosition(this.eel.head.x, this.eel.head.y);
     while (this.bodySprites.length < this.eel.body.length) {
       const seg = this.eel.body[this.bodySprites.length];
       this.bodySprites.push(this.add.image(seg.x, seg.y, 'eelBlock'));
     }
-
-    // update tail sprite positions
     for (let i = 0; i < this.eel.body.length; i++) {
       const seg = this.eel.body[i];
       this.bodySprites[i].setPosition(seg.x, seg.y);
     }
   }
+
+  // -------------------------------------------------------------------------
+  // game over handler
+  // -------------------------------------------------------------------------
+  gameOver(msg) {
+    if (!this.alive) return;
+    this.alive = false;
+    this.add.text(
+      CANVAS_WIDTH / 2,
+      CANVAS_HEIGHT / 2,
+      `${msg}\nTap to restart`,
+      { fontSize: 18, color: '#fff', align: 'center' }
+    ).setOrigin(0.5);
+  }
 }
 
+// boot Phaser
 new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
